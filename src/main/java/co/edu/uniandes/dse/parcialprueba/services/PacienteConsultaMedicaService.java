@@ -27,16 +27,21 @@ public class PacienteConsultaMedicaService {
     @Transactional
     public ConsultaMedicaEntity addConsulta (Long idPaciente, Long idConsulta) throws EntityNotFoundException, IllegalOperationException {
         PacienteEntity paciente = pacienteRepository.findById(idPaciente).orElseThrow(() -> new EntityNotFoundException("El paciente con id " + idPaciente + " no existe"));
-        ConsultaMedicaEntity consulta = consultaMedicaRepository.findById(idConsulta).orElseThrow(() -> new EntityNotFoundException("La consulta con id " + idConsulta + " no existe"));
-        paciente.getConsultas().add(consulta);
-        return consulta;
+        ConsultaMedicaEntity consultaEntity = consultaMedicaRepository.findById(idConsulta).orElseThrow(() -> new EntityNotFoundException("La consulta con id " + idConsulta + " no existe"));
+        for (ConsultaMedicaEntity consulta: paciente.getConsultas()) {
+            if (consulta.getFecha().equals(consultaEntity.getFecha())) {
+                throw new IllegalOperationException("El paciente ya tiene una consulta programada para la fecha de la consulta");
+            }
+        }
+        paciente.getConsultas().add(consultaEntity);
+        return consultaEntity;
     }
 
     @Transactional
     public List<ConsultaMedicaEntity> getConsultasProgramadas (Long idPaciente) throws EntityNotFoundException {
         PacienteEntity paciente = pacienteRepository.findById(idPaciente).orElseThrow(() -> new EntityNotFoundException("El paciente con id " + idPaciente + " no existe"));
         List<ConsultaMedicaEntity> consultas = new ArrayList<>();
-        for (ConsultaMedicaEntity consulta : paciente.getConsultas()) {
+        for (ConsultaMedicaEntity consulta: paciente.getConsultas()) {
             if (consulta.getFecha().after(Calendar.getInstance().getTime())) {
                 consultas.add(consulta);
             }
